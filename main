@@ -1,0 +1,268 @@
+# Prolog
+
+
+# Author:  Carmindy Phillips, Kloe Gordon, Kayla Ruzicka
+
+
+# Email:  cphillips30@murraystate.edu, kgordon5@murraystate.edu, kruzicka@murraystate.edu
+
+
+# Section: CSC233-01
+
+
+# Date: 4/27/26
+
+
+import tkinter as tk
+import datetime
+
+
+def main():
+    #An Array to store dictionary keys.
+    library = []
+
+
+    #Initializes default page state
+    root = tk.Tk()
+    root.title("Library Management System")
+    root.geometry("600x300")
+    container = tk.Frame(root)
+    container.pack(fill="both", expand=True)
+    container.grid_rowconfigure(0, weight=1)
+    container.grid_columnconfigure(0, weight=1)
+    root.frames = {}
+
+
+    #Defines a Home page
+    def homePage(parent):
+        frame = tk.Frame(parent)
+        tk.Label(frame, text="Add/Remove Books").pack(pady=20)
+        tk.Button(frame, text="Add Book", command=lambda: show_frame(addPage), width=20).pack(pady=5)
+        tk.Button(frame, text="Remove Book", command=lambda: show_frame(removePage), width=20).pack(pady=5)
+        tk.Button(frame, text="Go to Search", command=lambda: show_frame(searchPage)).pack(pady=10)
+        return frame
+
+
+        #Defines Search Page
+    def searchPage(parent):
+        frame = tk.Frame(parent)
+        tk.Label(frame, text="Search Page").pack(pady=20)
+        results = []
+
+
+        # Search input first
+        search_entry = tk.Entry(frame, width=30)
+        search_entry.pack(pady=5)
+
+
+        # Single working Search button
+        def performSearch():
+            query = search_entry.get().lower()
+            listbox.delete(0, tk.END)
+            results.clear()
+           
+            #Returns an item at an index through enumeration
+            for i, book in enumerate(library):
+                #makes any error be skipped 
+                try:
+                    if query in book["Title"].lower() or query in book["Author"].lower():
+                        borrowed = book.get("Borrowed", False)
+                        due_date = book.get("DueDate")
+                        results.append(i)
+
+
+                        status = ""
+                        if borrowed and due_date:
+                            status = f" (Borrowed, Due: {due_date.strftime('%Y-%m-%d')})"
+
+
+                        listbox.insert(tk.END,f"{book['Title']} by {book['Author']}{status}")
+                except Exception:
+                    continue
+                   
+        def borrow_book(index):
+            if not library[index]["Borrowed"]:
+                library[index]["Borrowed"] = True
+                due_date = datetime.datetime.now() + datetime.timedelta(days=14)
+                library[index]["DueDate"] = due_date
+                listbox.insert(tk.END,f"Borrowed. Due:", due_date.strftime("%Y-%m-%d"),"(status)")
+            else:
+                listbox.insert(tk.END,f"Book already borrowed.")
+               
+        def borrow_selected():
+            selected = listbox.curselection()
+            if not selected:
+                listbox.insert(tk.END,f"No book selected.")
+                return
+            real_index = results[selected[0]]
+            borrow_book(real_index)
+
+
+        def return_book(index):
+            if isinstance(index, int) and 0 <= index < len(library):
+                library[index]["Borrowed"] = False
+                library[index]["DueDate"] = None
+                listbox.insert(tk.END,f"Book returned.")
+            else:
+                listbox.insert(tk.END,f"Invalid index passed to return_book:", index)
+                       
+        def return_selected():
+            selected = listbox.curselection()
+            if not selected:
+                listbox.insert(tk.END,f"No book selected.")
+                return
+
+
+            real_index = results[selected[0]]
+            return_book(real_index)
+           
+        tk.Button(frame, text="Search", command=performSearch).pack(pady=5)
+        tk.Button(frame, text="Borrow Selected", command=borrow_selected).pack()
+        tk.Button(frame, text="Return Selected", command=return_selected).pack()
+       
+        # Results listbox below
+        listbox = tk.Listbox(frame, width=40, height=10)
+        listbox.pack(pady=10)
+
+
+        tk.Button(frame, text="Go to Home", command=lambda: show_frame(homePage)).pack()
+        return frame
+ 
+   #Defines the Add Book Page
+    def addPage(parent):
+        frame = tk.Frame(parent)
+        tk.Label(frame, text="Add New Book", font=("Arial", 12, "bold")).pack(pady=10)
+
+
+        tk.Label(frame, text="Title:").pack()
+        title_entry = tk.Entry(frame, width=30)
+        title_entry.pack(pady=5)
+
+
+        tk.Label(frame, text="Author:").pack()
+        author_entry = tk.Entry(frame, width=30)
+        author_entry.pack(pady=5)
+
+
+        tk.Label(frame, text="Description:").pack()
+        desc_entry = tk.Entry(frame, width=30)
+        desc_entry.pack(pady=5)
+
+
+    #Adds a dictionary entry to the Array
+        def addBook():
+            title = title_entry.get()
+            author = author_entry.get()
+            desc = desc_entry.get()
+
+
+            if title and author:
+                book = {
+                    "Title": title,
+                    "Author": author,
+                    "Description": desc,
+                    "Borrowed": False,
+                    "DueDate": None
+                }
+                library.append(book)
+
+
+                print("Book added:", book)
+
+
+                # Clear fields after adding
+                title_entry.delete(0, tk.END)
+                author_entry.delete(0, tk.END)
+                desc_entry.delete(0, tk.END)
+            else:
+                print("Title and Author are required.")
+
+
+        tk.Button(frame, text="Add Book", command=addBook).pack(pady=10)
+        tk.Button(frame, text="Go to Home", command=lambda: show_frame(homePage)).pack()
+
+
+        return frame
+
+
+    #Defines the Remove Book Page
+    def removePage(parent):
+        frame = tk.Frame(parent)
+        tk.Label(frame, text="Remove Book", font=("Arial", 12, "bold")).pack(pady=10)
+
+
+        listbox = tk.Listbox(frame, width=40, height=10)
+        listbox.pack(pady=10)
+
+
+        def borrow_book(index):
+            if not library[index]["Borrowed"]:
+                library[index]["Borrowed"] = True
+                due_date = datetime.datetime.now() + datetime.timedelta(days=14)
+                library[index]["DueDate"] = due_date
+                print("Borrowed. Due:", due_date.strftime("%Y-%m-%d"))
+            else:
+                print("Book already borrowed.")
+
+
+        # Refresh listbox
+        def refresh_list():
+            listbox.delete(0, tk.END)
+            for book in library:
+                listbox.insert(tk.END, f"{book['Title']} by {book['Author']}")
+
+
+        frame.refresh_list = refresh_list
+               
+        # Remove selected book
+        def remove_selected():
+            selected = listbox.curselection()
+
+
+            if not selected:
+                print("No book selected.")
+                return
+
+
+            index = selected[0]
+            removed_book = library.pop(index)
+            print("Removed:", removed_book)
+
+
+            refresh_list()
+
+
+        tk.Button(frame, text="Remove Selected Book", command=remove_selected).pack(pady=5)
+        tk.Button(frame, text="Go to Home", command=lambda: show_frame(homePage)).pack()
+
+
+        return frame
+       
+    #Retrieves specified window from root frame.
+    def show_frame(page_func):
+        frame = root.frames.get(page_func)
+        if frame:
+            frame.tkraise()
+
+
+            # If this page has a refresh function, call it
+            if hasattr(frame, "refresh_list"):
+                frame.refresh_list()
+
+
+    #Instantiates each page
+    for i in (searchPage, homePage, addPage, removePage):
+        frame = i(container)
+        root.frames[i] = frame
+        frame.grid(row=0, column=0, sticky="nsew")
+
+
+    show_frame(homePage)
+
+
+    root.mainloop()
+
+
+main()
+
+
